@@ -277,6 +277,16 @@
         "category": "SFTP"
       },
       {
+        "command": "sftp.remoteExplorer.copyFile",
+        "title": "Copy",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remoteExplorer.pasteFile",
+        "title": "Paste",
+        "category": "SFTP"
+      },
+      {
         "command": "sftp.remoteExplorer.refresh",
         "title": "Refresh",
         "icon": {
@@ -561,6 +571,16 @@
           "command": "sftp.viewContent",
           "group": "2_files",
           "when": "view == remoteExplorer && viewItem == file && config.sftp.downloadWhenOpenInRemoteExplorer"
+        },
+        {
+          "command": "sftp.remoteExplorer.copyFile",
+          "group": "2_files",
+          "when": "view == remoteExplorer && viewItem == file"
+        },
+        {
+          "command": "sftp.remoteExplorer.pasteFile",
+          "group": "2_files",
+          "when": "view == remoteExplorer && viewItem != file"
         },
         {
           "command": "sftp.revealInExplorer",

@@ -273,6 +273,10 @@ export default class FTPFileSystem extends RemoteFileSystem {
     return await this.renameAtomic(srcPath, destPath);
   }
 
+  async copy(srcPath: string, destPath: string): Promise<void> {
+    return await this.atomicCopy(srcPath, destPath);
+  }
+
   async renameAtomic(srcPath: string, destPath: string): Promise<void> {
     const task = () =>
       new Promise<void>((resolve, reject) => {
@@ -400,6 +404,21 @@ export default class FTPFileSystem extends RemoteFileSystem {
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.setLastMod(path, date, err => {
+          if (err) {
+            return reject(err);
+          }
+
+          resolve();
+        });
+      });
+
+    return this.queue.add(task);
+  }
+
+  private async atomicCopy(srcPath: string, destPath: string): Promise<void> {
+    const task = () =>
+      new Promise<void>((resolve, reject) => {
+        this.ftp.rename(srcPath, destPath, err => {
           if (err) {
             return reject(err);
           }
