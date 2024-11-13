@@ -66,3 +66,5 @@ export const COMMAND_CREATE_FILE = 'sftp.create.file';
 
 export const COMMAND_COPY_FILE = 'sftp.remoteExplorer.copyFile';
 export const COMMAND_PASTE_FILE = 'sftp.remoteExplorer.pasteFile';
+export const COMMAND_COPY_FOLDER = 'sftp.remoteExplorer.copyFolder';
+export const COMMAND_PASTE_FOLDER = 'sftp.remoteExplorer.pasteFolder';

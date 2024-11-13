@@ -205,4 +205,8 @@ export default class LocalFileSystem extends FileSystem {
   renameAtomic(srcPath: string, destPath: string): Promise<void> {
     return fse.rename(srcPath, destPath);
   }
+
+  copy (srcPath: string, destPath: string): Promise<void> {
+    return fse.copy(srcPath, destPath);
+  }
 }

@@ -278,12 +278,22 @@
       },
       {
         "command": "sftp.remoteExplorer.copyFile",
-        "title": "Copy",
+        "title": "Copy File",
         "category": "SFTP"
       },
       {
         "command": "sftp.remoteExplorer.pasteFile",
-        "title": "Paste",
+        "title": "Paste File",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remoteExplorer.copyFolder",
+        "title": "Copy Folder",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remoteExplorer.pasteFolder",
+        "title": "Paste Folder",
         "category": "SFTP"
       },
       {
@@ -573,16 +583,6 @@
           "when": "view == remoteExplorer && viewItem == file && config.sftp.downloadWhenOpenInRemoteExplorer"
         },
         {
-          "command": "sftp.remoteExplorer.copyFile",
-          "group": "2_files",
-          "when": "view == remoteExplorer && viewItem == file"
-        },
-        {
-          "command": "sftp.remoteExplorer.pasteFile",
-          "group": "2_files",
-          "when": "view == remoteExplorer && viewItem != file"
-        },
-        {
           "command": "sftp.revealInExplorer",
           "group": "2_files",
           "when": "view == remoteExplorer && viewItem != root"
@@ -619,6 +619,26 @@
           "command": "sftp.download.file",
           "group": "3_trans@2",
           "when": "view == remoteExplorer && viewItem != root && viewItem == file"
+        },
+        {
+          "command": "sftp.remoteExplorer.copyFile",
+          "group": "4_copy",
+          "when": "view == remoteExplorer && viewItem == file"
+        },
+        {
+          "command": "sftp.remoteExplorer.pasteFile",
+          "group": "4_copy",
+          "when": "view == remoteExplorer && viewItem != file && sftp.copiedFileShowCommand"
+        },
+        {
+          "command": "sftp.remoteExplorer.copyFolder",
+          "group": "5_copy",
+          "when": "view == remoteExplorer && viewItem != file"
+        },
+        {
+          "command": "sftp.remoteExplorer.pasteFolder",
+          "group": "5_copy",
+          "when": "view == remoteExplorer && viewItem != file"
         },
         {
           "command": "sftp.delete.remote",
