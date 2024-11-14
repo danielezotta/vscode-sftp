@@ -256,6 +256,21 @@
         "title": "Create File",
         "category": "SFTP"
       },
+			{
+				"command": "sftp.remote.chmod",
+				"title": "Change permissions",
+				"category": "SFTP"
+			},
+			{
+				"command": "sftp.rename.file",
+				"title": "Rename File",
+				"category": "SFTP"
+			},
+			{
+				"command": "sftp.rename.folder",
+				"title": "Rename Folder",
+				"category": "SFTP"
+			},
       {
         "command": "sftp.revealInExplorer",
         "title": "Reveal in Explorer",
@@ -598,6 +613,16 @@
           "group": "3_trans@1",
           "when": "view == remoteExplorer && viewItem != root && viewItem == file"
         },
+				{
+					"command": "sftp.rename.file",
+					"group": "3_trans@1",
+					"when": "view == remoteExplorer && viewItem != root && viewItem == file && !listMultiSelection"
+				},
+				{
+					"command": "sftp.rename.folder",
+					"group": "3_trans@1",
+					"when": "view == remoteExplorer && viewItem != root && viewItem != file && !listMultiSelection"
+				},
         {
           "command": "sftp.upload.folder.to.allProfiles",
           "group": "3_trans@1",
@@ -638,7 +663,7 @@
         {
           "command": "sftp.remoteExplorer.pasteFolder",
           "group": "5_copy",
-          "when": "view == remoteExplorer && viewItem != file"
+          "when": "view == remoteExplorer && viewItem != file && sftp.copiedFolderShowCommand"
         },
         {
           "command": "sftp.delete.remote",
@@ -664,7 +689,12 @@
           "command": "sftp.download.folder",
           "group": "inline",
           "when": "sftp.enabled && view == remoteExplorer && viewItem == folder"
-        }
+        },
+				{
+					"command": "sftp.remote.chmod",
+					"group": "3_trans@3",
+					"when": "view == remoteExplorer && viewItem != root && !listMultiSelection"
+				}
       ],
       "scm/title": [
         {

@@ -77,7 +77,6 @@ export default abstract class FileSystem {
   abstract put(input: Readable, path, option?: FileOption): Promise<void>;
   abstract mkdir(dir: string): Promise<void>;
   abstract ensureDir(dir: string): Promise<void>;
-  abstract chmod(path: string, mode: number): Promise<void>;
   abstract list(dir: string, option?): Promise<FileEntry[]>;
   abstract lstat(path: string): Promise<FileStats>;
   abstract readlink(path: string): Promise<string>;
@@ -86,12 +85,12 @@ export default abstract class FileSystem {
   abstract rmdir(path: string, recursive: boolean): Promise<void>;
   abstract rename(srcPath: string, destPath: string): Promise<void>;
   abstract renameAtomic(srcPath: string, destPath: string): Promise<void>;
-
+  abstract chmod(path: string, mode: string): Promise<void>;
   static abortReadableStream(stream: Readable) {
     const err = new Error('Transfer Aborted') as FileSystemError;
     err.code = ERROR_MSG_STREAM_INTERRUPT;
 
-    // don't do `stream.destroy(err)`! `sftp.ReadaStream` do not support `err` parameter in `destory` method.
+    // don't do `stream.destroy(err)`! `sftp.ReadaStream` do not support `err` parameter in `destroy` method.
     stream.emit('error', err);
     stream.destroy();
   }

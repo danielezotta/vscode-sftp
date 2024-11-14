@@ -16,7 +16,16 @@ export default class LocalFileSystem extends FileSystem {
       atime: stat.atime.getTime(),
     };
   }
-
+  chmod(path: string, mode: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      fs.chmod(path, mode, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  }
   lstat(path: string): Promise<FileStats> {
     return new Promise((resolve, reject) => {
       fs.lstat(path, (err, stat: fs.Stats) => {
@@ -67,18 +76,6 @@ export default class LocalFileSystem extends FileSystem {
       } catch (err) {
         reject(err);
       }
-    });
-  }
-
-  async chmod(path: string, mode: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      fs.chmod(path, mode, (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
     });
   }
 
