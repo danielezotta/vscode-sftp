@@ -12,7 +12,7 @@ import { flatten } from '../../utils';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
 
-interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {}
+interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption { }
 
 type ExternalTransferOption<T extends InternalTransferOption> = Pick<
   T,
@@ -40,8 +40,6 @@ interface SyncOption extends TransferOption {
 interface BaseTransferHandleConfig {
   srcFsPath: string;
   targetFsPath: string;
-  dirPerm?: number,
-  filePerm?: number,
   srcFs: FileSystem;
   targetFs: FileSystem;
   transferDirection: TransferDirection;
@@ -83,12 +81,6 @@ async function transferFolder(
   // Need this to make sure file can correct transfer
   await targetFs.ensureDir(targetFsPath);
 
-  // If dirPerm is configured, we chmod the remote directory after creation.
-  if(config.transferOption.dirPerm) {
-    logger.info("chmod remote directory as configured by dirPerm, dirPerm is: ", config.transferOption.dirPerm)
-    targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
-  }
-
   const fileEntries = await srcFs.list(srcFsPath);
   await Promise.all(
     fileEntries.map(file =>
@@ -110,7 +102,7 @@ async function transferFolder(
     )
   );
 
-  logger.info('folder transfered.');
+  logger.info('folder [' + srcFsPath + '] transfered.');
 }
 
 async function transferFile(
@@ -157,11 +149,6 @@ async function transferWithType(
       if (config.ensureDirExist) {
         const { targetFs, targetFsPath } = config;
         await targetFs.ensureDir(targetFs.pathResolver.dirname(targetFsPath));
-        // If dirPerm is configured, we chmod the remote directory after creation.
-        if(config.transferOption.dirPerm) {
-          logger.info("Running chmod on remote directory with perm: ", config.transferOption.dirPerm)
-          targetFs.chmod(targetFs.pathResolver.dirname(targetFsPath), parseInt(String(config.transferOption.dirPerm), 8));
-        }
       }
       // <<< save before upload: start
       if (config.transferDirection === TransferDirection.LOCAL_TO_REMOTE) {
@@ -208,7 +195,6 @@ async function _sync(
   collect: (t: TransferTask) => void,
   deleted: FileEntry[]
 ) {
-
   const { srcFsPath, targetFsPath, srcFs, targetFs, transferOption, transferDirection } = config;
   if (transferOption.ignore && transferOption.ignore(srcFsPath)) {
     return;
@@ -431,8 +417,6 @@ export async function transfer(
     fallbackMode: stat.mode,
     mtime: stat.mtime,
     atime: stat.atime,
-    filePerm: config?.filePerm,
-    dirPerm: config?.dirPerm
   };
   await transferWithType({ ...config, transferOption, ensureDirExist: true }, stat.type, collect);
 }

@@ -3,7 +3,7 @@
   "displayName": "SFTP",
   "description": "SFTP/FTP sync",
   "version": "1.20.0-beta1",
-  "publisher": "Daniele Zotta",
+  "publisher": "",
   "author": "Daniele Zotta <danielezotta@gmail.com> (https://github.com/danielezotta)",
   "engines": {
     "vscode": "^1.64.2"

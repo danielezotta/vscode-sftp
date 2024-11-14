@@ -2,7 +2,7 @@ import { ExtensionContext } from 'vscode';
 import logger from './logger';
 import { registerCommand } from './host';
 import Command from './commands/abstract/command';
-import { createCommand, createFileCommand, createFileMultiCommand } from './commands/abstract/createCommand';
+import { createCommand, createFileCommand } from './commands/abstract/createCommand';
 
 export default function init(context: ExtensionContext) {
   loadCommands(
@@ -31,19 +31,6 @@ export default function init(context: ExtensionContext) {
     createFileCommand,
     context
   );
-  loadCommands(
-    require.context(
-      // Look for files in the current directory
-      './commands',
-      // Do not look in subdirectories
-      false,
-      // Only include "_base-" prefixed .vue files
-      /fileMultiCommand.*.ts$/
-    ),
-    /fileMultiCommand(.*)/,
-    createFileMultiCommand,
-    context
-  );
 }
 
 function nomalizeCommandName(rawName) {
@@ -60,6 +47,7 @@ async function loadCommands(requireContext, nameRegex, commandCreator, context: 
       .replace(/\.\w+$/, '');
 
     const match = nameRegex.exec(clearName);
+    // console.log([clearName, match]);
     if (!match || !match[1]) {
       logger.warn(`Command name not found from ${fileName}`);
       return;
@@ -68,14 +56,15 @@ async function loadCommands(requireContext, nameRegex, commandCreator, context: 
     const commandOption = requireContext(fileName).default;
     commandOption.name = nomalizeCommandName(match[1]);
 
+    // console.log(commandOption.name);
     try {
       // tslint:disable-next-line variable-name
       const Cmd = commandCreator(commandOption);
       const cmdInstance: Command = new Cmd();
-      logger.debug(`register command "${commandOption.name}" from "${fileName}"`);
+      console.log(`register command "${commandOption.name}" from "${fileName}"`);
       registerCommand(context, commandOption.id, cmdInstance.run, cmdInstance);
     } catch (error) {
-      logger.error(error, `load command "${fileName}"`);
+      console.log([error, `load command "${fileName}"`]);
     }
   });
 }
