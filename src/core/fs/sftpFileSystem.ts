@@ -40,6 +40,8 @@ export default class SFTPFileSystem extends RemoteFileSystem {
       size: stat.size,
       mtime: this.toLocalTime(stat.mtime * 1000),
       atime: this.toLocalTime(stat.atime * 1000),
+      owner: "",
+      group: ""
     };
   }
 
@@ -70,6 +72,17 @@ export default class SFTPFileSystem extends RemoteFileSystem {
   chmod(path: string, mode: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.sftp.chmod(path, mode, (err, stat) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(stat);
+      });
+    });
+  }
+  chown(path: string, arg: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.sftp.chown(path, arg.split(":")[0], arg.split(":")[1], (err, stat) => {
         if (err) {
           reject(err);
           return;

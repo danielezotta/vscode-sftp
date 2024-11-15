@@ -14,11 +14,23 @@ export default class LocalFileSystem extends FileSystem {
       mode: stat.mode & parseInt('777', 8), // tslint:disable-line:no-bitwise
       mtime: stat.mtime.getTime(),
       atime: stat.atime.getTime(),
+      owner: "",
+      group: ""
     };
   }
   chmod(path: string, mode: string): Promise<void> {
     return new Promise((resolve, reject) => {
       fs.chmod(path, mode, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  }
+  chown(path: string, arg: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      fs.chmod(path, arg, (err) => {
         if (err) {
           return reject(err);
         }

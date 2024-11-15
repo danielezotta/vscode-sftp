@@ -32,6 +32,8 @@ export interface FileStats {
   atime: number;
   // symbol link target
   target?: string;
+  owner: string;
+  group: string;
 }
 
 export type FileEntry = FileStats & {
@@ -86,6 +88,7 @@ export default abstract class FileSystem {
   abstract rename(srcPath: string, destPath: string): Promise<void>;
   abstract renameAtomic(srcPath: string, destPath: string): Promise<void>;
   abstract chmod(path: string, mode: string): Promise<void>;
+  abstract chown(path: string, arg: string): Promise<void>;
   static abortReadableStream(stream: Readable) {
     const err = new Error('Transfer Aborted') as FileSystemError;
     err.code = ERROR_MSG_STREAM_INTERRUPT;

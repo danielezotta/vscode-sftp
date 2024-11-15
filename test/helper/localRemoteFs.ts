@@ -17,6 +17,8 @@ export default class LocalRemoteFileSystem extends RemoteFileSystem {
       mode: stat.mode & parseInt('777', 8), // tslint:disable-line:no-bitwise
       mtime: this.toLocalTime(stat.mtime.getTime()),
       atime: this.toLocalTime(stat.atime.getTime()),
+      owner: "",
+      group: ""
     };
   }
 

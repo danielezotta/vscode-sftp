@@ -64,6 +64,8 @@ export default class FTPFileSystem extends RemoteFileSystem {
       mtime,
       atime: mtime,
       target: stat.target,
+      owner: stat.owner,
+      group: stat.group
     };
   }
 
@@ -87,6 +89,8 @@ export default class FTPFileSystem extends RemoteFileSystem {
         size: 0,
         mtime: 0,
         atime: 0,
+        owner: "",
+        group: "",
       };
     }
 
@@ -140,6 +144,11 @@ export default class FTPFileSystem extends RemoteFileSystem {
 
   chmod(path: string, mode: string): Promise<void> {
     const command = `CHMOD ${parseInt(mode).toString(10)} ${path}`;
+    return this.atomicSite(command);
+  }
+
+  chown(path: string, arg: string): Promise<void> {
+    const command = `CHOWN ${arg} ${path}`;
     return this.atomicSite(command);
   }
 

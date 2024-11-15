@@ -5,6 +5,7 @@ import { Uri, window } from 'vscode';
 import * as path from 'path';
 import { FileHandlerContext } from './createFileHandler';
 import { downloadFile, downloadFolder, uploadFile, uploadFolder } from './transfer';
+import logger from '../logger';
 
 // NEED_VSCODE_UPDATE: detect explorer view visible
 // refresh will open explorer view which cause a problem https://github.com/liximomo/vscode-sftp/issues/286
@@ -37,22 +38,33 @@ export async function pasteRemoteFile(ctx: FileHandlerContext) {
   if (copiedFile == null) { return; }
 
   try {
-    const localFs = ctx.fileService.getLocalFileSystem();
-
-    await downloadFile(copiedFile.remoteUri, { ignore: null });
-
     const fileName = path.basename(copiedFile.localFsPath);
 
-    const newFilePath = ctx.target.localFsPath.toString() + localFs.pathResolver.sep + fileName;
+    const localFs = ctx.fileService.getLocalFileSystem();
+    const remoteFs = await ctx.fileService.getRemoteFileSystem(ctx.config);
+
+    const newLocalFilePath = ctx.target.localFsPath.toString() + localFs.pathResolver.sep + fileName;
+    const newRemoteFilePath = ctx.target.remoteFsPath.toString() + remoteFs.pathResolver.sep + fileName;
+
+    try {
+      await remoteFs.lstat(newRemoteFilePath);
+      logger.warn(`Can't paste file because already exist`);
+      window.showErrorMessage(`Can't paste file because already exist`);
+      return;
+    } catch (error) {
+  
+    }
+
+    await downloadFile(copiedFile.remoteUri, { ignore: null });    
 
     const stream = await localFs.get(copiedFile.localFsPath, { encoding: 'utf8' });
 
-    await localFs.ensureDir(localFs.pathResolver.dirname(newFilePath));
+    await localFs.ensureDir(localFs.pathResolver.dirname(newLocalFilePath));
 
-    await localFs.put(stream, newFilePath);
+    await localFs.put(stream, newLocalFilePath);
 
     // Upload the downloaded file to the remote FS
-    await uploadFile(Uri.file(newFilePath), { ignore: null });
+    await uploadFile(Uri.file(newLocalFilePath), { ignore: null });
     
     copiedFile = null;
 
@@ -74,19 +86,30 @@ export async function pasteRemoteFolder(ctx: FileHandlerContext) {
 
   try {
     const localFs = ctx.fileService.getLocalFileSystem();
+    const remoteFs = await ctx.fileService.getRemoteFileSystem(ctx.config);
+
+    const folderName = path.basename(copiedFolder.localFsPath);
+    
+    const newLocalFolderPath = ctx.target.localFsPath.toString() + localFs.pathResolver.sep + folderName + localFs.pathResolver.sep;
+    const newRemoteFolderPath = ctx.target.remoteFsPath.toString() + remoteFs.pathResolver.sep + folderName + remoteFs.pathResolver.sep;
+
+    try {
+      await remoteFs.lstat(newRemoteFolderPath);
+      logger.warn(`Can't paste folder because already exist`);
+      window.showErrorMessage(`Can't paste folder because already exist`);
+      return;
+    } catch (error) {
+  
+    }
 
     await downloadFolder(copiedFolder.remoteUri, { ignore: null });
 
-    const folderName = path.basename(copiedFolder.localFsPath);
-
-    const newFolderPath = ctx.target.localFsPath.toString() + localFs.pathResolver.sep + folderName + localFs.pathResolver.sep;
-
     // Create the destination directory if it doesn't exist
-    await localFs.ensureDir(newFolderPath);
+    await localFs.ensureDir(newLocalFolderPath);
 
-    await (localFs as LocalFileSystem).copy(copiedFolder.localFsPath, newFolderPath);
+    await (localFs as LocalFileSystem).copy(copiedFolder.localFsPath, newLocalFolderPath);
 
-    await uploadFolder(Uri.file(newFolderPath), { ignore: null });
+    await uploadFolder(Uri.file(newLocalFolderPath), { ignore: null });
 
     refreshRemoteExplorer(ctx.target, false);
 

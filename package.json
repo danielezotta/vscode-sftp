@@ -2,7 +2,7 @@
   "name": "sftp",
   "displayName": "SFTP",
   "description": "SFTP/FTP sync",
-  "version": "1.20.0-beta1",
+  "version": "1.20.1-beta1",
   "publisher": "",
   "author": "Daniele Zotta <danielezotta@gmail.com> (https://github.com/danielezotta)",
   "engines": {
@@ -259,6 +259,11 @@
 			{
 				"command": "sftp.remote.chmod",
 				"title": "Change permissions",
+				"category": "SFTP"
+			},
+			{
+				"command": "sftp.remote.chown",
+				"title": "Change owner",
 				"category": "SFTP"
 			},
 			{
@@ -692,6 +697,11 @@
         },
 				{
 					"command": "sftp.remote.chmod",
+					"group": "3_trans@3",
+					"when": "view == remoteExplorer && viewItem != root && !listMultiSelection"
+				},
+				{
+					"command": "sftp.remote.chown",
 					"group": "3_trans@3",
 					"when": "view == remoteExplorer && viewItem != root && !listMultiSelection"
 				}
