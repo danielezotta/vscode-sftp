@@ -1,6 +1,6 @@
 import { COMMAND_REMOTEEXPLORER_EDITINLOCAL } from '../constants';
 import { downloadFile } from '../fileHandlers';
-import { showTextDocument } from '../host';
+import { executeCommand } from '../host';
 import { uriFromExplorerContextOrEditorContext } from './shared';
 import { checkFileCommand } from './abstract/createCommand';
 
@@ -10,6 +10,6 @@ export default checkFileCommand({
 
   async handleFile(ctx) {
     await downloadFile(ctx, { ignore: null });
-    await showTextDocument(ctx.target.localUri, { preview: true });
+    await executeCommand('vscode.open', ctx.target.localUri, { preview: true });
   },
 });

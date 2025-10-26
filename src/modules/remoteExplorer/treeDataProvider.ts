@@ -22,6 +22,14 @@ type Id = number;
 const previewDocumentPathPrefix = '/~ ';
 
 const DEFAULT_FILES_EXCLUDE = ['.git', '.svn', '.hg', 'CVS', '.DS_Store'];
+
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp', '.ico', '.tiff', '.tif', '.heic', '.heif'];
+
+function isImageFile(filePath: string): boolean {
+  const ext = upath.extname(filePath).toLowerCase();
+  return IMAGE_EXTENSIONS.includes(ext);
+}
+
 /**
  * covert the url path for a customed docuemnt title
  *
@@ -162,8 +170,9 @@ export default class RemoteTreeData
     treeItem.resourceUri = item.resource.uri;
     treeItem.contextValue = isRoot ? 'root' : item.isDirectory ? 'folder' : 'file';
     if (!isRoot && !item.isDirectory) {
+      const useDownload = getExtensionSetting().downloadWhenOpenInRemoteExplorer || isImageFile(item.resource.fsPath);
       treeItem.command = {
-        command: getExtensionSetting().downloadWhenOpenInRemoteExplorer
+        command: useDownload
           ? COMMAND_REMOTEEXPLORER_EDITINLOCAL
           : COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
         arguments: [item],
