@@ -104,30 +104,74 @@ export default class RemoteTreeData
     }
   }
 
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  private formatDate(timestamp: number): string {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  }
+
   getTreeItem(item: ExplorerItem): vscode.TreeItem {
     const isRoot = (item as ExplorerRoot).explorerContext !== undefined;
-    let customLabel;
+    let label: string;
+    const treeItem = new vscode.TreeItem(
+      '', // We'll set the label after processing
+      item.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+    );
+    
     if (isRoot) {
-      customLabel = (item as ExplorerRoot).explorerContext.fileService.name;
+      label = (item as ExplorerRoot).explorerContext.fileService.name;
+    } else {
+      const fileName = upath.basename(item.resource.fsPath);
+      const fileEntry = this._map?.get(item.resource.uri.query) as (FileEntry & { mtime?: number }) | undefined;
+      
+      if (fileEntry) {
+        const lastModified = 'mtime' in fileEntry ? fileEntry.mtime : 0;
+        const dateStr = this.formatDate(lastModified);
+        
+        // For files, show size and date
+        if (!item.isDirectory) {
+          const size = 'size' in fileEntry ? fileEntry.size : 0;
+          treeItem.description = `${this.formatFileSize(size)} • ${dateStr}`;
+        } else {
+          // For folders, just show the date
+          treeItem.description = dateStr;
+        }
+      }
+      
+      label = fileName;
     }
-    if (!customLabel) {
-      customLabel = upath.basename(item.resource.fsPath);
+    
+    treeItem.label = label;
+    treeItem.resourceUri = item.resource.uri;
+    treeItem.contextValue = isRoot ? 'root' : item.isDirectory ? 'folder' : 'file';
+    if (!isRoot && !item.isDirectory) {
+      treeItem.command = {
+        command: getExtensionSetting().downloadWhenOpenInRemoteExplorer
+          ? COMMAND_REMOTEEXPLORER_EDITINLOCAL
+          : COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
+        arguments: [item],
+        title: 'View Remote Resource',
+      };
     }
-    return {
-      label: customLabel,
-      resourceUri: item.resource.uri,
-      collapsibleState: item.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : undefined,
-      contextValue: isRoot ? 'root' : item.isDirectory ? 'folder' : 'file',
-      command: item.isDirectory
-        ? undefined
-        : {
-            command: getExtensionSetting().downloadWhenOpenInRemoteExplorer
-              ? COMMAND_REMOTEEXPLORER_EDITINLOCAL
-              : COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
-            arguments: [item],
-            title: 'View Remote Resource',
-          },
-    };
+    
+    return treeItem;
   }
 
   async getChildren(item?: ExplorerItem): Promise<ExplorerItem[]> {
@@ -163,6 +207,10 @@ export default class RemoteTreeData
         });
         const mapItem = this._map.get(newResource.uri.query);
         if (mapItem) {
+          // Update the existing map item with the latest file info
+          if ('size' in file) {
+            (mapItem as any).size = file.size;
+          }
           return mapItem;
         } else {
           const newItem = {
@@ -170,6 +218,8 @@ export default class RemoteTreeData
               remotePath: file.fspath,
             }),
             isDirectory,
+            // Store the file entry details including size
+            ...file,
           };
           this._map.set(newItem.resource.uri.query, newItem);
           return newItem;
