@@ -1,11 +1,10 @@
-import { UResource, FileService, FileType, LocalFileSystem } from '../core';
+import { UResource, FileService, FileType, FileSystem, LocalFileSystem } from '../core';
 import app from '../app';
 import { log } from 'console';
 import { Uri, window } from 'vscode';
 import * as path from 'path';
 import { FileHandlerContext } from './createFileHandler';
 import { downloadFile, downloadFolder, uploadFile, uploadFolder } from './transfer';
-import logger from '../logger';
 
 // NEED_VSCODE_UPDATE: detect explorer view visible
 // refresh will open explorer view which cause a problem https://github.com/liximomo/vscode-sftp/issues/286
@@ -30,6 +29,66 @@ export async function refreshRemoteExplorer(target: UResource, isDirectory: File
   });
 }
 
+function splitNameAndExtension(fileName: string) {
+  const ext = path.extname(fileName);
+  const baseName = ext ? fileName.slice(0, -ext.length) : fileName;
+  return { baseName, extension: ext };
+}
+
+async function existsInLocal(localFs: FileSystem, fullPath: string): Promise<boolean> {
+  try {
+    await localFs.lstat(fullPath);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function existsInRemote(remoteFs: FileSystem, fullPath: string): Promise<boolean> {
+  try {
+    await remoteFs.lstat(fullPath);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function getAvailableCopyName(
+  localFs: FileSystem,
+  remoteFs: FileSystem,
+  localBaseDir: string,
+  remoteBaseDir: string,
+  baseName: string,
+  extension: string,
+): Promise<string> {
+  let attempt = 0;
+
+  while (true) {
+    let candidateName: string;
+    if (attempt === 0) {
+      candidateName = `${baseName}${extension}`;
+    } else if (attempt === 1) {
+      candidateName = `${baseName}_copy${extension}`;
+    } else {
+      candidateName = `${baseName}_copy_${attempt}${extension}`;
+    }
+
+    const localCandidatePath = localFs.pathResolver.join(localBaseDir, candidateName);
+    const remoteCandidatePath = remoteFs.pathResolver.join(remoteBaseDir, candidateName);
+
+    const [localExists, remoteExists] = await Promise.all([
+      existsInLocal(localFs, localCandidatePath),
+      existsInRemote(remoteFs, remoteCandidatePath),
+    ]);
+
+    if (!localExists && !remoteExists) {
+      return candidateName;
+    }
+
+    attempt += 1;
+  }
+}
+
 export async function copyRemoteFile(target: UResource) {
   copiedFile = target;
 }
@@ -38,22 +97,25 @@ export async function pasteRemoteFile(ctx: FileHandlerContext) {
   if (copiedFile == null) { return; }
 
   try {
-    const fileName = path.basename(copiedFile.localFsPath);
-
     const localFs = ctx.fileService.getLocalFileSystem();
     const remoteFs = await ctx.fileService.getRemoteFileSystem(ctx.config);
 
-    const newLocalFilePath = ctx.target.localFsPath.toString() + localFs.pathResolver.sep + fileName;
-    const newRemoteFilePath = ctx.target.remoteFsPath.toString() + remoteFs.pathResolver.sep + fileName;
+    const originalFileName = path.basename(copiedFile.localFsPath);
+    const { baseName, extension } = splitNameAndExtension(originalFileName);
 
-    try {
-      await remoteFs.lstat(newRemoteFilePath);
-      logger.warn(`Can't paste file because already exist`);
-      window.showErrorMessage(`Can't paste file because already exist`);
-      return;
-    } catch (error) {
-  
-    }
+    const localBaseDir = ctx.target.localFsPath.toString();
+    const remoteBaseDir = ctx.target.remoteFsPath.toString();
+
+    const fileName = await getAvailableCopyName(
+      localFs,
+      remoteFs,
+      localBaseDir,
+      remoteBaseDir,
+      baseName,
+      extension
+    );
+
+    const newLocalFilePath = localFs.pathResolver.join(localBaseDir, fileName);
 
     await downloadFile(copiedFile.remoteUri, { ignore: null });    
 
@@ -88,19 +150,22 @@ export async function pasteRemoteFolder(ctx: FileHandlerContext) {
     const localFs = ctx.fileService.getLocalFileSystem();
     const remoteFs = await ctx.fileService.getRemoteFileSystem(ctx.config);
 
-    const folderName = path.basename(copiedFolder.localFsPath);
-    
-    const newLocalFolderPath = ctx.target.localFsPath.toString() + localFs.pathResolver.sep + folderName + localFs.pathResolver.sep;
-    const newRemoteFolderPath = ctx.target.remoteFsPath.toString() + remoteFs.pathResolver.sep + folderName + remoteFs.pathResolver.sep;
+    const originalFolderName = path.basename(copiedFolder.localFsPath);
+    const { baseName } = splitNameAndExtension(originalFolderName);
 
-    try {
-      await remoteFs.lstat(newRemoteFolderPath);
-      logger.warn(`Can't paste folder because already exist`);
-      window.showErrorMessage(`Can't paste folder because already exist`);
-      return;
-    } catch (error) {
-  
-    }
+    const localBaseDir = ctx.target.localFsPath.toString();
+    const remoteBaseDir = ctx.target.remoteFsPath.toString();
+
+    const folderName = await getAvailableCopyName(
+      localFs,
+      remoteFs,
+      localBaseDir,
+      remoteBaseDir,
+      baseName,
+      ''
+    );
+
+    const newLocalFolderPath = localFs.pathResolver.join(localBaseDir, folderName);
 
     await downloadFolder(copiedFolder.remoteUri, { ignore: null });
 

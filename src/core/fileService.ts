@@ -53,6 +53,10 @@ interface ServiceOption {
   remoteExplorer: {
     filesExclude?: string[];
     order: number;
+    showOwner?: boolean;
+    showPermissions?: boolean;
+    showSize?: boolean;
+    showModified?: boolean;
   };
   remoteTimeOffsetInHours: number;
   limitOpenFilesOnRemote: number | true;

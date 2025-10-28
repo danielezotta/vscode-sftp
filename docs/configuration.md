@@ -110,6 +110,31 @@ Set `uploadOnSave` to false when you watch everything.
 ## remoteExplorer
 *object*.
 
+## remoteExplorer.order
+*number*: Remote Explorer will ascending sorting by this value. If the values are the same, sort by name.
+
+**default**: 0
+
+## remoteExplorer.showOwner
+*boolean*: Show the owner/group information in the Remote Explorer list alongside each entry.
+
+**default**: false
+
+## remoteExplorer.showPermissions
+*boolean*: Show the permissions (for example, `drwxr-xr-x`) in the Remote Explorer list.
+
+**default**: false
+
+## remoteExplorer.showSize
+*boolean*: Show file size information in the Remote Explorer list.
+
+**default**: true
+
+## remoteExplorer.showModified
+*boolean*: Show last modified timestamp in the Remote Explorer list.
+
+**default**: true
+
 ## remoteExplorer.filesExclude
 *string[]*: Configure that patterns for excluding files and folders.
 The Remote Explorer decides which files and folders to show or hide based on this setting.

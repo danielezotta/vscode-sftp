@@ -34,8 +34,8 @@ export function createCommand(commandOption: CommandOption & { name: string }) {
       this.name = commandOption.name;
     }
 
-    doCommandRun(...args) {
-      commandOption.handleCommand.apply(this, args);
+    protected async doCommandRun(...args): Promise<void> {
+      await commandOption.handleCommand.apply(this, args);
     }
   };
 }

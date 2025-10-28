@@ -119,6 +119,26 @@ The Remote Explorer decides which files and folders to show or hide based on thi
 
 **default**: 0
 
+## remoteExplorer.showOwner
+*boolean*: Show the owner/group information in the Remote Explorer list alongside each entry.
+
+**default**: false
+
+## remoteExplorer.showPermissions
+*boolean*: Show the permissions (for example, `drwxr-xr-x`) in the Remote Explorer list.
+
+**default**: false
+
+## remoteExplorer.showSize
+*boolean*: Show file size information in the Remote Explorer list.
+
+**default**: true
+
+## remoteExplorer.showModified
+*boolean*: Show last modified timestamp in the Remote Explorer list.
+
+**default**: true
+
 ## concurrency
 *number*: Lowering the concurrency could get more stability because some clients/servers have some sort of configured/hard coded limit.
 

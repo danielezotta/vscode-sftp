@@ -127,6 +127,26 @@
             "type": "number",
             "description": "Remote Explorer will ascending sorting by this value. If the values are the same, sort by name.",
             "default": 0
+          },
+          "showOwner": {
+            "type": "boolean",
+            "description": "Show file owner information in the Remote Explorer list.",
+            "default": false
+          },
+          "showPermissions": {
+            "type": "boolean",
+            "description": "Show file permissions (e.g. rwxr-xr-x) in the Remote Explorer list.",
+            "default": false
+          },
+          "showSize": {
+            "type": "boolean",
+            "description": "Show file size information in the Remote Explorer list.",
+            "default": true
+          },
+          "showModified": {
+            "type": "boolean",
+            "description": "Show last modified timestamp in the Remote Explorer list.",
+            "default": true
           }
         }
       },

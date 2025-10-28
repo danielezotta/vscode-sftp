@@ -105,8 +105,8 @@ export default abstract class RemoteFileSystem extends FileSystem {
           return reject(err);
         }
 
-        const buffer = Buffer.concat(arr);
-        resolve(option && option.encoding ? buffer.toString(option.encoding) : buffer);
+        const buffer = Buffer.concat(arr as unknown as readonly Uint8Array[]);
+        resolve(option && option.encoding ? buffer.toString(option.encoding as BufferEncoding) : buffer);
       };
 
       stream.on('data', onData);

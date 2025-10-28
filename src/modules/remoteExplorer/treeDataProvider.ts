@@ -77,11 +77,11 @@ export default class RemoteTreeData
   private _rootsMap: Map<Id, ExplorerRoot> | null;
   private _map: Map<vscode.Uri['query'], ExplorerItem>;
 
-  private _onDidChangeFolder: vscode.EventEmitter<ExplorerItem> = new vscode.EventEmitter<
-    ExplorerItem
+  private _onDidChangeFolder: vscode.EventEmitter<ExplorerItem | null> = new vscode.EventEmitter<
+    ExplorerItem | null
   >();
   private _onDidChangeFile: vscode.EventEmitter<vscode.Uri> = new vscode.EventEmitter<vscode.Uri>();
-  readonly onDidChangeTreeData: vscode.Event<ExplorerItem> = this._onDidChangeFolder.event;
+  readonly onDidChangeTreeData: vscode.Event<ExplorerItem | null | undefined> = this._onDidChangeFolder.event;
   readonly onDidChange: vscode.Event<vscode.Uri> = this._onDidChangeFile.event;
 
   async refresh(item?: ExplorerItem): Promise<any> {
@@ -91,7 +91,7 @@ export default class RemoteTreeData
       this._roots = null;
       this._rootsMap = null;
 
-      this._onDidChangeFolder.fire();
+      this._onDidChangeFolder.fire(null);
       return;
     }
 
@@ -135,9 +135,38 @@ export default class RemoteTreeData
     });
   }
 
+  private formatPermissions(mode: number | undefined, isDirectory: boolean): string {
+    if (mode === undefined || mode === null) {
+      return '';
+    }
+
+    const typeChar = isDirectory ? 'd' : '-';
+    const symbols = ['r', 'w', 'x'];
+    const segments = [mode >> 6, mode >> 3, mode]
+      .map(segment => segment & 0b111)
+      .map(value =>
+        symbols
+          .map((symbol, index) => (value & (1 << (2 - index)) ? symbol : '-'))
+          .join('')
+      );
+
+    return typeChar + segments.join('');
+  }
+
+  private formatOwner(owner?: string, group?: string): string {
+    const ownerPart = owner ? owner.trim() : '';
+    const groupPart = group ? group.trim() : '';
+
+    if (ownerPart && groupPart) {
+      return `${ownerPart}:${groupPart}`;
+    }
+
+    return ownerPart || groupPart || '';
+  }
+
   getTreeItem(item: ExplorerItem): vscode.TreeItem {
     const isRoot = (item as ExplorerRoot).explorerContext !== undefined;
-    let label: string;
+    let label = ''; // Initialize with empty string
     const treeItem = new vscode.TreeItem(
       '', // We'll set the label after processing
       item.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
@@ -148,25 +177,87 @@ export default class RemoteTreeData
     } else {
       const fileName = upath.basename(item.resource.fsPath);
       const fileEntry = this._map?.get(item.resource.uri.query) as (FileEntry & { mtime?: number }) | undefined;
+      const root = this.findRoot(item.resource.uri);
+      const explorerSettings = root?.explorerContext.config.remoteExplorer ?? ({} as ServiceConfig['remoteExplorer']);
+      const showOwner = explorerSettings?.showOwner ?? false;
+      const showPermissions = explorerSettings?.showPermissions ?? false;
+      const showSize = explorerSettings?.showSize ?? true;
+      const showModified = explorerSettings?.showModified ?? true;
       
       if (fileEntry) {
         const lastModified = 'mtime' in fileEntry ? fileEntry.mtime : 0;
         const dateStr = this.formatDate(lastModified);
-        
-        // For files, show size and date
-        if (!item.isDirectory) {
+        const metaParts: string[] = [];
+
+        if (!item.isDirectory && showSize) {
           const size = 'size' in fileEntry ? fileEntry.size : 0;
-          treeItem.description = `${this.formatFileSize(size)} • ${dateStr}`;
+          metaParts.push(this.formatFileSize(size));
+        }
+
+        if (showPermissions) {
+          const permissions = this.formatPermissions(fileEntry.mode, item.isDirectory);
+          if (permissions) {
+            metaParts.push(permissions);
+          }
+        }
+
+        if (showOwner) {
+          const ownerStr = this.formatOwner((fileEntry as any).owner, (fileEntry as any).group);
+          if (ownerStr) {
+            metaParts.push(ownerStr);
+          }
+        }
+
+        if (showModified && dateStr) {
+          metaParts.push(dateStr);
+        }
+
+        // Pad filename to align columns across all files in the directory
+        const maxLen = (item as any).__maxNameLen as number | undefined;
+        if (maxLen && maxLen > fileName.length) {
+          label = fileName.padEnd(maxLen, ' ');
         } else {
-          // For folders, just show the date
-          treeItem.description = dateStr;
+          label = fileName;
+        }
+
+        // Build description with metadata columns using visual separators
+        if (metaParts.length) {
+          const columns: string[] = [];
+          const separator = ' │ '; // Unicode box-drawing character for visual separation
+
+          // Size column (right-aligned for better readability)
+          if (showSize) {
+            const sizeVal = !item.isDirectory && 'size' in fileEntry ? this.formatFileSize((fileEntry as any).size || 0) : '';
+            columns.push(sizeVal.padStart(10, ' '));
+          }
+
+          // Permissions column
+          if (showPermissions) {
+            const permVal = this.formatPermissions(fileEntry.mode, item.isDirectory) || '';
+            columns.push(permVal.padEnd(10, ' '));
+          }
+
+          // Owner column
+          if (showOwner) {
+            const ownerVal = this.formatOwner((fileEntry as any).owner, (fileEntry as any).group) || '';
+            columns.push(ownerVal.padEnd(15, ' '));
+          }
+
+          // Date column
+          if (showModified) {
+            const dateVal = dateStr || '';
+            columns.push(dateVal);
+          }
+
+          // Join columns with visual separator
+          treeItem.description = columns.join(separator);
         }
       }
-      
-      label = fileName;
     }
     
     treeItem.label = label;
+    // Description is already set above with the metadata
+    
     treeItem.resourceUri = item.resource.uri;
     treeItem.contextValue = isRoot ? 'root' : item.isDirectory ? 'folder' : 'file';
     if (!isRoot && !item.isDirectory) {
@@ -207,7 +298,7 @@ export default class RemoteTreeData
       return !ignore.ignores(relativePath);
     }
 
-    return fileEntries
+    const result = fileEntries
       .filter(filterFile)
       .map(file => {
         const isDirectory = file.type === FileType.Directory;
@@ -220,7 +311,7 @@ export default class RemoteTreeData
           if ('size' in file) {
             (mapItem as any).size = file.size;
           }
-          return mapItem;
+          return mapItem as any;
         } else {
           const newItem = {
             resource: UResource.updateResource(item.resource, {
@@ -231,10 +322,23 @@ export default class RemoteTreeData
             ...file,
           };
           this._map.set(newItem.resource.uri.query, newItem);
-          return newItem;
+          return newItem as any;
         }
       })
       .sort(dirFirstSort);
+
+    // Compute max filename length among siblings and assign to each item
+    if (result.length) {
+      const maxLen = result.reduce((m, i) => {
+        const name = upath.basename(i.resource.fsPath);
+        return Math.max(m, name.length);
+      }, 0);
+      for (const i of result) {
+        (i as any).__maxNameLen = maxLen;
+      }
+    }
+
+    return result;
   }
 
   async getParent(item: ExplorerChild): Promise<ExplorerItem> {
