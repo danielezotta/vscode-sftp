@@ -48,7 +48,13 @@
         {
           "id": "remoteExplorer",
           "name": "Explorer",
-          "when": "sftp.enabled"
+          "when": "sftp.enabled && !config.sftp.useWebviewExplorer"
+        },
+        {
+          "id": "remoteExplorerWebview",
+          "name": "Explorer (Columns)",
+          "type": "webview",
+          "when": "sftp.enabled && config.sftp.useWebviewExplorer"
         }
       ]
     },
@@ -70,6 +76,11 @@
           "type": "boolean",
           "default": false,
           "description": "\"Download\" instead of \"View Content\" when open file in Remote Explorer"
+        },
+        "sftp.useWebviewExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use webview-based explorer with column layout for file metadata (requires reload)"
         }
       }
     },

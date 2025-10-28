@@ -9,10 +9,12 @@ import { toRemotePath } from '../../helper';
 import { REMOTE_SCHEME } from '../../constants';
 import { getFileService } from '../serviceManager';
 import RemoteTreeDataProvider, { ExplorerItem } from './treeDataProvider';
+import { WebviewTreeProvider } from './webviewTreeProvider';
 
 export default class RemoteExplorer {
   private _explorerView: vscode.TreeView<ExplorerItem>;
   private _treeDataProvider: RemoteTreeDataProvider;
+  private _webviewProvider?: WebviewTreeProvider;
 
   constructor(context: vscode.ExtensionContext) {
     this._treeDataProvider = new RemoteTreeDataProvider();
@@ -20,11 +22,21 @@ export default class RemoteExplorer {
       vscode.workspace.registerTextDocumentContentProvider(REMOTE_SCHEME, this._treeDataProvider)
     );
 
+    // Register traditional tree view
     this._explorerView = vscode.window.createTreeView('remoteExplorer', {
       showCollapseAll: true,
       treeDataProvider: this._treeDataProvider,
       canSelectMany: true,
     });
+
+    // Register webview-based tree view
+    this._webviewProvider = new WebviewTreeProvider(
+      context.extensionUri,
+      this._treeDataProvider
+    );
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider('remoteExplorerWebview', this._webviewProvider)
+    );
 
     registerCommand(context, COMMAND_REMOTEEXPLORER_REFRESH, () => this._refreshSelection());
     registerCommand(context, COMMAND_REMOTEEXPLORER_VIEW_CONTENT, (item: ExplorerItem) =>
@@ -57,6 +69,11 @@ export default class RemoteExplorer {
     }
 
     this._treeDataProvider.refresh(item);
+    
+    // Also refresh webview if it exists
+    if (this._webviewProvider) {
+      this._webviewProvider.refresh(item);
+    }
   }
 
   reveal(item: ExplorerItem): Thenable<void> {

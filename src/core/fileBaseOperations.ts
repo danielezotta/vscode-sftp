@@ -45,7 +45,18 @@ export function removeDir(path: string, fs: FileSystem, option): Promise<void> {
   return fs.rmdir(path, true);
 }
 
-export function rename(srcPath: string, destPath: string, fs: FileSystem): Promise<void> {
+export async function rename(srcPath: string, destPath: string, fs: FileSystem): Promise<void> {
+  // Check if destination already exists
+  try {
+    await fs.lstat(destPath);
+    // If we get here, the file exists
+    logger.warn(`Can't rename because destination file already exists: ${destPath}`);
+    window.showErrorMessage(`Can't rename because a file or folder with this name already exists.`);
+    return;
+  } catch (error) {
+    // File doesn't exist, proceed with rename
+  }
+  
   return fs.rename(srcPath, destPath);
 }
 

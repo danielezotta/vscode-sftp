@@ -119,7 +119,8 @@ export async function pasteRemoteFile(ctx: FileHandlerContext) {
 
     await downloadFile(copiedFile.remoteUri, { ignore: null });    
 
-    const stream = await localFs.get(copiedFile.localFsPath, { encoding: 'utf8' });
+    // Read file without encoding to preserve binary data (images, etc.)
+    const stream = await localFs.get(copiedFile.localFsPath);
 
     await localFs.ensureDir(localFs.pathResolver.dirname(newLocalFilePath));
 

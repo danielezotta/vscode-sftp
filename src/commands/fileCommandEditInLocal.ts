@@ -10,6 +10,6 @@ export default checkFileCommand({
 
   async handleFile(ctx) {
     await downloadFile(ctx, { ignore: null });
-    await executeCommand('vscode.open', ctx.target.localUri, { preview: true });
+    await executeCommand('vscode.open', ctx.target.localUri, { preview: false });
   },
 });

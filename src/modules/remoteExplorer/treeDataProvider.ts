@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { showTextDocument } from '../../host';
 import {
   upath,
   UResource,
@@ -11,24 +10,15 @@ import {
   ServiceConfig,
 } from '../../core';
 import {
-  COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
   COMMAND_REMOTEEXPLORER_EDITINLOCAL,
 } from '../../constants';
 import { getAllFileService } from '../serviceManager';
-import { getExtensionSetting } from '../ext';
 
 type Id = number;
 
 const previewDocumentPathPrefix = '/~ ';
 
 const DEFAULT_FILES_EXCLUDE = ['.git', '.svn', '.hg', 'CVS', '.DS_Store'];
-
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp', '.ico', '.tiff', '.tif', '.heic', '.heif'];
-
-function isImageFile(filePath: string): boolean {
-  const ext = upath.extname(filePath).toLowerCase();
-  return IMAGE_EXTENSIONS.includes(ext);
-}
 
 /**
  * covert the url path for a customed docuemnt title
@@ -261,13 +251,11 @@ export default class RemoteTreeData
     treeItem.resourceUri = item.resource.uri;
     treeItem.contextValue = isRoot ? 'root' : item.isDirectory ? 'folder' : 'file';
     if (!isRoot && !item.isDirectory) {
-      const useDownload = getExtensionSetting().downloadWhenOpenInRemoteExplorer || isImageFile(item.resource.fsPath);
+      // Always use editInLocal to open files in editable mode
       treeItem.command = {
-        command: useDownload
-          ? COMMAND_REMOTEEXPLORER_EDITINLOCAL
-          : COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
+        command: COMMAND_REMOTEEXPLORER_EDITINLOCAL,
         arguments: [item],
-        title: 'View Remote Resource',
+        title: 'Edit Remote File',
       };
     }
     
@@ -399,7 +387,10 @@ export default class RemoteTreeData
       return;
     }
 
-    showTextDocument(makePreivewUrl(item.resource.uri));
+    // Always use editInLocal to download and open files in editable mode
+    import('vscode').then(vscode => {
+      vscode.commands.executeCommand(COMMAND_REMOTEEXPLORER_EDITINLOCAL, item);
+    });
   }
 
   private _getRoots(): ExplorerRoot[] {
