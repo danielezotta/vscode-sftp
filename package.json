@@ -6,7 +6,7 @@
   "publisher": "",
   "author": "Daniele Zotta <danielezotta@gmail.com> (https://github.com/danielezotta)",
   "engines": {
-    "vscode": "^1.105.0"
+    "vscode": "^1.85.0"
   },
   "bugs": {
     "url": "https://github.com/danielezotta/vscode-sftp/issues",
@@ -783,7 +783,7 @@
     "@types/jest": "^30.0.0",
     "@types/lru-cache": "^7.10.10",
     "@types/node": "^14.18.63",
-    "@types/vscode": "^1.105.0",
+    "@types/vscode": "^1.85.0",
     "@types/webpack-env": "^1.18.8",
     "braces": "^3.0.3",
     "glob-parent": "^6.0.2",
